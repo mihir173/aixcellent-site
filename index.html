@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIxcellent — The Cinematic Motion Gallery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          primary: "#d4af37",
+          "on-primary": "#131313",
+          surface: "#0e0e0e",
+          "surface-dim": "#131313",
+          "surface-container": "#1c1b1b",
+          "surface-container-high": "#2a2a2a",
+          "on-surface": "#e5e2e1",
+          "on-surface-variant": "#d0c5af",
+          outline: "#99907c",
+          "outline-variant": "#4d4635",
+        },
+        fontFamily: {
+          display: ["Bodoni Moda", "serif"],
+          headline: ["Bodoni Moda", "serif"],
+          body: ["Hanken Grotesk", "sans-serif"],
+          mono: ["JetBrains Mono", "monospace"],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  :root { --primary: #d4af37; --surface: #0e0e0e; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: #0a0a0a;
+    color: #e5e2e1;
+    font-family: "Hanken Grotesk", sans-serif;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  body::-webkit-scrollbar { display: none; }
+
+  /* ── Seamless fixed background ── */
+  .bg-canvas {
+    position: fixed; inset: 0; z-index: -2;
+    background-image: url('https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=2560&q=90');
+    background-size: cover; background-position: center;
+    transform: scale(1.04);
+  }
+  .bg-canvas-tint {
+    position: fixed; inset: 0; z-index: -1;
+    background: linear-gradient(160deg, rgba(10,10,10,0.82) 0%, rgba(10,10,10,0.72) 50%, rgba(10,10,10,0.88) 100%);
+  }
+
+  /* ── Film grain ── */
+  .grain {
+    position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 500;
+    background: rgba(14,14,14,0); backdrop-filter: blur(0px);
+    border-bottom: 1px solid rgba(255,255,255,0);
+    transition: background 0.6s ease, backdrop-filter 0.6s ease, border-color 0.6s ease;
+  }
+  nav.scrolled {
+    background: rgba(14,14,14,0.88);
+    backdrop-filter: blur(20px);
+    border-color: rgba(255,255,255,0.06);
+  }
+
+  /* ── Horizontal scroll wrapper ── */
+  .horiz-wrapper {
+    position: relative;
+  }
+  .sticky-cont {
+    position: sticky; top: 0; height: 100vh; width: 100vw; overflow: hidden;
+  }
+  .horiz-track {
+    display: flex; height: 100%; will-change: transform;
+  }
+  .panel {
+    width: 100vw; height: 100vh; flex-shrink: 0; position: relative;
+    background-size: cover; background-position: center; overflow: hidden;
+  }
+
+  /* ── Ambient overlay ── */
+  .ambient {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(180deg, rgba(14,14,14,0.65) 0%, rgba(14,14,14,0.25) 50%, rgba(14,14,14,0.85) 100%);
+  }
+  .ambient-left {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(105deg, rgba(14,14,14,0.85) 0%, rgba(14,14,14,0.3) 60%, rgba(14,14,14,0.7) 100%);
+  }
+
+  /* ── Spotlight ── */
+  .spotlight {
+    position: absolute; width: 60vw; height: 140vh; z-index: 2; pointer-events: none;
+    background: radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%);
+    border-radius: 50%; top: -20vh; left: -20vw;
+    animation: driftSpot 18s ease-in-out infinite alternate;
+  }
+  @keyframes driftSpot {
+    0%   { transform: translate(0,0) scale(1); }
+    100% { transform: translate(35vw, 12vh) scale(1.25); }
+  }
+
+  /* ── Ken Burns removed — seamless BG handles it ── */
+
+  /* ── Movie frame cards ── */
+  .movie-frame {
+    position: relative; flex-shrink: 0;
+    width: 240px; height: 360px;
+    background: #0e0e0e;
+    border: 6px solid #1a1a1a;
+    border-radius: 3px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(255,255,255,0.08);
+    overflow: hidden; cursor: pointer;
+    opacity: 0; transform: translateY(40px) scale(0.96);
+    transition: opacity 0.9s cubic-bezier(0.25,1,0.5,1), transform 0.9s cubic-bezier(0.25,1,0.5,1), box-shadow 0.4s ease;
+  }
+  .movie-frame.visible {
+    opacity: 1; transform: translateY(0) scale(1);
+  }
+  .movie-frame::after {
+    content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 35%, transparent 65%, rgba(255,255,255,0.06) 100%);
+    transform: translateX(-110%);
+    transition: transform 1.4s ease-in-out;
+  }
+  .movie-frame:hover::after { transform: translateX(110%); }
+  .movie-frame:hover {
+    transform: scale(1.04) translateY(-12px) !important;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(212,175,55,0.35), 0 0 30px rgba(212,175,55,0.1);
+  }
+  .movie-frame img {
+    width: 100%; height: 100%; object-fit: cover; opacity: 0.85;
+    transform: scale(1.06);
+    transition: opacity 0.6s ease, transform 12s ease;
+  }
+  .movie-frame:hover img { opacity: 1; transform: scale(1.12); }
+  .frame-info {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    padding: 40px 14px 14px;
+    background: linear-gradient(to top, rgba(14,14,14,0.98), transparent);
+    opacity: 0; transform: translateY(16px);
+    transition: all 0.4s ease; z-index: 4;
+  }
+  .movie-frame:hover .frame-info { opacity: 1; transform: translateY(0); }
+  .play-btn {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%) scale(0.6);
+    opacity: 0; color: var(--primary); font-size: 52px;
+    transition: all 0.4s ease; z-index: 5;
+  }
+  .movie-frame:hover .play-btn { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+
+  /* ── Buttons — minimal modern ── */
+  .btn-gold {
+    display: inline-block;
+    background: var(--primary);
+    color: #0a0a0a;
+    border: none;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.22s ease, color 0.22s ease, opacity 0.22s ease;
+  }
+  .btn-gold:hover { background: #c49b28; }
+
+  .btn-ghost {
+    display: inline-block;
+    background: transparent;
+    color: rgba(229,226,225,0.65);
+    border: 1px solid rgba(255,255,255,0.16);
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.22s ease, color 0.22s ease;
+  }
+  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ── Glass panel ── */
+  .glass {
+    background: rgba(255,255,255,0.025);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ── Input underline ── */
+  .inp-wrap {
+    position: relative; border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .inp-wrap::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; width: 0; height: 1px;
+    background: var(--primary); transition: width 0.45s ease;
+  }
+  .inp-wrap:focus-within::after { width: 100%; }
+  .inp-wrap input,
+  .inp-wrap textarea {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: #e5e2e1; font-family: "Hanken Grotesk", sans-serif; font-size: 15px;
+    padding: 6px 0 6px;
+  }
+  .inp-wrap textarea { resize: none; }
+  .inp-wrap label {
+    display: block; font-family: "JetBrains Mono", monospace;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #99907c; margin-bottom: 4px;
+  }
+
+  /* ── Progress dots ── */
+  #prog-dots > div {
+    height: 3px; border-radius: 999px; cursor: pointer;
+    transition: width 0.35s ease, background 0.35s ease;
+  }
+
+  /* ── Video modal ── */
+  #vid-modal {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(8,8,8,0.96); backdrop-filter: blur(24px);
+    justify-content: center; align-items: center;
+  }
+  #vid-modal.open { display: flex; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ── Scroll-driven entrance ── */
+  .fade-up {
+    opacity: 0; transform: translateY(32px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .fade-up.in { opacity: 1; transform: translateY(0); }
+
+  /* ── Section padding ── */
+  .sec { padding: 96px 80px; }
+  @media (max-width: 768px) { .sec { padding: 64px 24px; } }
+
+  /* ── Profile tabs ── */
+  .tab-btn { cursor: pointer; transition: all 0.3s; }
+  .tab-btn.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeIn 0.4s ease; }
+
+  /* ── Tooltip ── */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+    background: #1c1b1b; border: 1px solid rgba(255,255,255,0.1);
+    color: #e5e2e1; font-family: "JetBrains Mono", monospace;
+    font-size: 9px; letter-spacing: 0.1em; white-space: nowrap;
+    padding: 4px 10px; border-radius: 2px; pointer-events: none; z-index: 100;
+  }
+
+  /* ── Horizontal divider line ── */
+  .gold-line {
+    width: 60px; height: 1px; background: var(--primary); opacity: 0.5;
+  }
+
+  /* ── Mobile nav toggle ── */
+  #mobile-nav {
+    display: none; position: fixed; inset: 0; z-index: 490;
+    background: rgba(10,10,10,0.98); flex-direction: column;
+    justify-content: center; align-items: center; gap: 36px;
+  }
+  #mobile-nav.open { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- Seamless background canvas -->
+<div class="bg-canvas"></div>
+<div class="bg-canvas-tint"></div>
+
+<!-- Film grain -->
+<div class="grain"></div>
+
+<!-- ══════════ NAVIGATION ══════════ -->
+<nav id="main-nav" class="px-8 md:px-20 py-4 flex justify-between items-center">
+  <a href="#" onclick="smoothToTop()" class="font-display text-xl text-primary tracking-tighter font-bold cursor-pointer select-none">AIxcellent</a>
+
+  <div class="hidden md:flex items-center gap-10">
+    <a href="#gallery"  class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Gallery</a>
+    <a href="#about"    class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">About</a>
+    <a href="#archive"  class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Archive</a>
+    <a href="#signup"   class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Join</a>
+    <a href="#profile"  class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Profile</a>
+    <a href="#contact"  class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Contact</a>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <a href="#signup" class="btn-gold hidden md:inline-block px-6 py-2.5 text-[10px]">Sign Up</a>
+    <button id="hamburger" class="md:hidden material-symbols-outlined text-on-surface-variant" onclick="toggleMobileNav()">menu</button>
+  </div>
+</nav>
+
+<!-- Mobile nav overlay -->
+<div id="mobile-nav">
+  <button class="absolute top-6 right-8 material-symbols-outlined text-on-surface-variant text-2xl" onclick="toggleMobileNav()">close</button>
+  <a href="#gallery" onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Gallery</a>
+  <a href="#about"   onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">About</a>
+  <a href="#archive" onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Archive</a>
+  <a href="#signup"  onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Join</a>
+  <a href="#profile" onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Profile</a>
+  <a href="#contact" onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Contact</a>
+  <a href="#signup"  onclick="toggleMobileNav()" class="btn-gold px-8 py-3 mt-4">Sign Up</a>
+</div>
+
+<!-- ══════════ HORIZONTAL SCROLL SECTION ══════════ -->
+<div class="horiz-wrapper" id="gallery" style="height: 100vh;"><!-- height set by JS --></div>
+<!-- Sticky container lives here (moved into wrapper by JS or inline) -->
+
+<!-- We build the sticky container inline for the wrapper -->
+<div id="sticky-inner" class="sticky-cont" style="display:none;">
+  <div class="horiz-track" id="track">
+
+    <!-- ─── PANEL 1 — Welcome / Hero ─── -->
+    <div class="panel" id="panel-0">
+      <div class="ambient"></div>
+      <div class="spotlight"></div>
+      <div class="relative z-10 flex flex-col items-center justify-center h-full text-center px-8">
+        <p class="font-mono text-[10px] text-primary tracking-[0.6em] uppercase mb-6 opacity-80">Private Collection — 2026</p>
+        <h1 class="font-display font-extralight text-6xl md:text-[88px] text-on-surface leading-none tracking-tight mb-6" style="letter-spacing:-0.03em;">
+          The Architecture<br/><em class="italic text-primary">of Shadows</em>
+        </h1>
+        <div class="gold-line mx-auto mb-6"></div>
+        <p class="font-body text-on-surface-variant max-w-lg text-base leading-relaxed opacity-75 mb-10">
+          A cinematic exploration where artificial intelligence meets the timeless art of noir. Every frame, a legacy.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <a href="#gallery" onclick="scrollToPanel(1)" class="btn-gold px-10 py-4">Enter Gallery</a>
+          <a href="#about" class="btn-ghost px-10 py-4">Our Story</a>
+        </div>
+        <div class="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-2 opacity-50">
+          <span class="font-mono text-[9px] tracking-[0.4em] uppercase text-on-surface-variant">Scroll to Explore</span>
+          <div class="w-px h-12 bg-primary opacity-40" style="animation: pulse 2s ease-in-out infinite;"></div>
+        </div>
+      </div>
+      <!-- Floating frame teaser -->
+      <div class="movie-frame absolute right-[8%] bottom-[12%] hidden lg:block visible" onclick="openModal(0)" style="opacity:1;transform:none;width:200px;height:300px;">
+        <img src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=600&q=85" alt="Cinema Screening"/>
+        <div class="frame-info">
+          <span class="font-mono text-[8px] text-primary uppercase tracking-widest mb-1 block">Now Screening</span>
+          <h4 class="font-headline text-lg text-on-surface">The Grand Hall</h4>
+        </div>
+        <span class="play-btn material-symbols-outlined">play_circle</span>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 2 — Classic Gallery ─── -->
+    <div class="panel" id="panel-1">
+      <div class="ambient-left"></div>
+      <div class="spotlight" style="animation-delay:-6s; left:55vw; top:-10vh;"></div>
+      <div class="relative z-10 flex items-center justify-between h-full px-8 md:px-20 gap-12">
+        <!-- Text left -->
+        <div class="hidden lg:flex flex-col max-w-xs">
+          <p class="font-mono text-[9px] text-primary tracking-[0.5em] uppercase mb-4 opacity-75">Exhibition I</p>
+          <h2 class="font-display text-5xl font-light italic leading-tight mb-6 text-on-surface">The Classic<br/>Era</h2>
+          <div class="gold-line mb-6"></div>
+          <p class="font-body text-on-surface-variant text-sm leading-relaxed opacity-80 mb-8">
+            Where shadows tell the story. Foundational works of the noir movement, restored in stunning clarity.
+          </p>
+          <button onclick="openModal(1)" class="btn-ghost px-6 py-3 self-start">View Screenings</button>
+        </div>
+        <!-- Frames -->
+        <div class="flex items-center gap-6 justify-center flex-1">
+          <div class="movie-frame mt-16" onclick="openModal(1)">
+            <img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=600&q=85" alt="Shadows"/>
+            <div class="frame-info">
+              <span class="font-mono text-[8px] text-primary block mb-0.5">1947 · 1h 37m</span>
+              <h4 class="font-headline text-base text-on-surface">Shadows</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined">play_circle</span>
+          </div>
+          <div class="movie-frame" onclick="openModal(2)">
+            <img src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=85" alt="The Alibi"/>
+            <div class="frame-info">
+              <span class="font-mono text-[8px] text-primary block mb-0.5">1952 · 2h 01m</span>
+              <h4 class="font-headline text-base text-on-surface">The Alibi</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined">play_circle</span>
+          </div>
+          <div class="movie-frame -mt-16 hidden md:block" onclick="openModal(3)">
+            <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600&q=85" alt="Nightfall"/>
+            <div class="frame-info">
+              <span class="font-mono text-[8px] text-primary block mb-0.5">1950 · 1h 45m</span>
+              <h4 class="font-headline text-base text-on-surface">Nightfall</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined">play_circle</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 3 — Neo-Realism Gallery ─── -->
+    <div class="panel" id="panel-2">
+      <div class="ambient"></div>
+      <div class="spotlight" style="animation-delay:-11s; left:40vw; top:5vh;"></div>
+      <div class="relative z-10 flex items-center justify-center h-full gap-8 px-8 md:px-20">
+        <!-- Frames -->
+        <div class="flex items-center gap-6 justify-center flex-1">
+          <div class="movie-frame -mt-12" onclick="openModal(4)">
+            <img src="https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?w=600&q=85" alt="Celluloid"/>
+            <div class="frame-info">
+              <span class="font-mono text-[8px] text-primary block mb-0.5">Exhibition · Gallery B</span>
+              <h4 class="font-headline text-base text-on-surface">Celluloid</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined">play_circle</span>
+          </div>
+          <div class="movie-frame" onclick="openModal(5)">
+            <img src="https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=600&q=85" alt="Deception"/>
+            <div class="frame-info">
+              <span class="font-mono text-[8px] text-primary block mb-0.5">1944 · 1h 45m</span>
+              <h4 class="font-headline text-base text-on-surface">Deception</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined">play_circle</span>
+          </div>
+          <div class="movie-frame mt-12 hidden md:block" onclick="openModal(6)">
+            <img src="https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=600&q=85" alt="Double Crossing"/>
+            <div class="frame-info">
+              <span class="font-mono text-[8px] text-primary block mb-0.5">1949 · 1h 32m</span>
+              <h4 class="font-headline text-base text-on-surface">Double Crossing</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined">play_circle</span>
+          </div>
+        </div>
+        <!-- Text right -->
+        <div class="hidden lg:flex flex-col max-w-xs text-right">
+          <p class="font-mono text-[9px] text-primary tracking-[0.5em] uppercase mb-4 opacity-75 self-end">Exhibition II</p>
+          <h2 class="font-display text-5xl font-light leading-tight mb-6 text-on-surface">Neo-<br/>Realism</h2>
+          <div class="gold-line mb-6 self-end"></div>
+          <p class="font-body text-on-surface-variant text-sm leading-relaxed opacity-80 mb-8">
+            Stark contrasts and brutal truths. The evolution of genre through concrete and grit.
+          </p>
+          <button onclick="openModal(5)" class="btn-ghost px-6 py-3 self-end">Explore Archive</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 4 — Machine Eye / Featured ─── -->
+    <div class="panel" id="panel-3">
+      <div class="ambient"></div>
+      <div class="spotlight" style="animation-delay:-3s; left:20vw; top:-15vh;"></div>
+      <div class="relative z-10 flex items-center h-full px-8 md:px-20 gap-16">
+        <!-- Featured frame -->
+        <div class="hidden lg:block flex-shrink-0">
+          <div class="movie-frame visible" style="width:300px;height:450px;opacity:1;transform:none;" onclick="openModal(7)">
+            <img src="https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=600&q=85" alt="Neon Night"/>
+            <div class="frame-info" style="padding-bottom:20px;">
+              <span class="font-mono text-[8px] text-primary block mb-1">1982 · Director's Cut</span>
+              <h4 class="font-headline text-xl text-on-surface">Neon Night</h4>
+              <p class="font-body text-xs text-on-surface-variant mt-1 opacity-80">Restored · 4K HDR</p>
+            </div>
+            <span class="play-btn material-symbols-outlined">play_circle</span>
+          </div>
+        </div>
+        <!-- Side stack -->
+        <div class="hidden md:flex flex-col gap-4 flex-shrink-0">
+          <div class="movie-frame visible" style="width:160px;height:240px;opacity:1;transform:none;" onclick="openModal(8)">
+            <img src="https://images.unsplash.com/photo-1579721346007-a0f0b0b7c4c5?w=400&q=85" alt="Midnight Alley"/>
+            <div class="frame-info">
+              <h4 class="font-headline text-sm text-on-surface">Midnight Alley</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined" style="font-size:32px;">play_circle</span>
+          </div>
+          <div class="movie-frame visible" style="width:160px;height:240px;opacity:1;transform:none;" onclick="openModal(9)">
+            <img src="https://images.unsplash.com/photo-1564869733816-92fc29f9b9cd?w=400&q=85" alt="The Big Sleep"/>
+            <div class="frame-info">
+              <h4 class="font-headline text-sm text-on-surface">The Big Sleep</h4>
+            </div>
+            <span class="play-btn material-symbols-outlined" style="font-size:32px;">play_circle</span>
+          </div>
+        </div>
+        <!-- Text -->
+        <div class="flex-1 max-w-sm">
+          <p class="font-mono text-[9px] text-primary tracking-[0.5em] uppercase mb-4 opacity-75">Featured Collection</p>
+          <h2 class="font-display text-5xl md:text-6xl font-light leading-tight mb-6 text-on-surface">The<br/><em class="italic text-primary">Machine Eye</em></h2>
+          <div class="gold-line mb-6"></div>
+          <p class="font-body text-on-surface-variant text-sm leading-relaxed opacity-80 mb-8">
+            Behind every frame is a sophisticated neural network trained on a century of cinematic mastery. We don't just generate images — we compose legacies.
+          </p>
+          <div class="flex flex-col gap-3">
+            <a href="#about" class="btn-gold px-8 py-3.5 inline-block text-center">Discover the Studio</a>
+            <a href="#archive" class="btn-ghost px-8 py-3.5 inline-block text-center">Browse Archive</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /track -->
+
+  <!-- Progress indicators -->
+  <div class="absolute bottom-6 left-0 right-0 flex justify-between items-center px-8 md:px-20 z-50 pointer-events-none">
+    <div id="prog-dots" class="flex gap-2 pointer-events-auto">
+      <div class="w-10 bg-primary cursor-pointer" onclick="scrollToPanel(0)" data-tip="Welcome"></div>
+      <div class="w-4 bg-white/20 cursor-pointer hover:bg-white/40" onclick="scrollToPanel(1)" data-tip="Classic Era"></div>
+      <div class="w-4 bg-white/20 cursor-pointer hover:bg-white/40" onclick="scrollToPanel(2)" data-tip="Neo-Realism"></div>
+      <div class="w-4 bg-white/20 cursor-pointer hover:bg-white/40" onclick="scrollToPanel(3)" data-tip="Machine Eye"></div>
+    </div>
+    <div class="flex items-center gap-2 pointer-events-none">
+      <span class="font-mono text-[9px] text-on-surface-variant tracking-widest uppercase hidden md:block">Scroll to Explore</span>
+      <span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_right_alt</span>
+    </div>
+  </div>
+
+</div><!-- /sticky-inner -->
+
+<!-- ══════════ VERTICAL SECTIONS ══════════ -->
+
+<!-- ─── ABOUT ─── -->
+<section id="about" class="sec border-t border-white/5" style="background:rgba(10,10,10,0.7);backdrop-filter:blur(2px);">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+      <div class="lg:col-span-5 fade-up">
+        <p class="font-mono text-[9px] text-primary tracking-[0.5em] uppercase mb-4 opacity-75">Est. 2024</p>
+        <h2 class="font-display text-6xl font-light italic leading-tight text-primary mb-4">The Studio</h2>
+        <div class="gold-line mb-6"></div>
+        <p class="font-body text-on-surface-variant leading-relaxed opacity-80 mb-8">
+          AIxcellent is a decentralized collective of AI researchers, cinematographers, and architects working from the shadows to redefine the visual medium. We believe high-art should be accessible — but never compromised.
+        </p>
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="glass p-4 border-l-2 border-primary">
+            <p class="font-mono text-[9px] text-primary uppercase tracking-widest mb-1">Pieces Curated</p>
+            <p class="font-headline text-3xl text-on-surface">2,400+</p>
+          </div>
+          <div class="glass p-4 border-l-2 border-white/10">
+            <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Members</p>
+            <p class="font-headline text-3xl text-on-surface">12k</p>
+          </div>
+        </div>
+        <a href="#signup" class="btn-gold px-8 py-3.5 inline-block">Join the Collective</a>
+      </div>
+      <div class="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-8 fade-up" style="transition-delay:0.15s;">
+        <div class="glass p-6">
+          <span class="material-symbols-outlined text-primary text-2xl mb-3 block">visibility</span>
+          <h4 class="font-mono text-[10px] text-primary uppercase tracking-widest mb-2">Our Mission</h4>
+          <p class="font-body text-on-surface-variant text-sm leading-relaxed opacity-80">
+            To bridge the gap between algorithmic precision and the visceral emotion of cinema. We believe the machine eye can learn to feel.
+          </p>
+        </div>
+        <div class="glass p-6">
+          <span class="material-symbols-outlined text-primary text-2xl mb-3 block">groups</span>
+          <h4 class="font-mono text-[10px] text-primary uppercase tracking-widest mb-2">The Collective</h4>
+          <p class="font-body text-on-surface-variant text-sm leading-relaxed opacity-80">
+            A shadow network of curators, engineers, and dreamers who believe that the perfect frame is worth more than a thousand words.
+          </p>
+        </div>
+        <div class="glass p-6 md:col-span-2 border-t border-primary/20">
+          <h4 class="font-mono text-[10px] text-primary uppercase tracking-widest mb-5">Lead Curators</h4>
+          <div class="flex flex-wrap gap-8">
+            <div>
+              <p class="font-headline text-lg text-on-surface">Alexei Volkov</p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest">Founder · Vision</p>
+            </div>
+            <div>
+              <p class="font-headline text-lg text-on-surface">Sarah Chen</p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest">Neural Art Lead</p>
+            </div>
+            <div>
+              <p class="font-headline text-lg text-on-surface">Marcus Thorne</p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest">Curation</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ARCHIVE (featured grid) ─── -->
+<section id="archive" class="sec border-t border-white/5" style="background:rgba(10,10,10,0.6);backdrop-filter:blur(2px);">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-end justify-between mb-12 fade-up">
+      <div>
+        <p class="font-mono text-[9px] text-primary tracking-[0.5em] uppercase mb-3 opacity-75">Curated Selection</p>
+        <h2 class="font-display text-5xl font-light text-on-surface">The Archive</h2>
+      </div>
+      <button onclick="openModal(0)" class="btn-ghost px-6 py-3 hidden md:block">View All</button>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-up" style="transition-delay:0.1s;">
+      <div class="group relative overflow-hidden cursor-pointer aspect-[2/3]" onclick="openModal(1)">
+        <img src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=600&q=85" alt="Grand Hall" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-400 opacity-0 group-hover:opacity-100">
+          <p class="font-mono text-[8px] text-primary uppercase tracking-widest mb-1">Neo-Noir</p>
+          <h4 class="font-headline text-base text-on-surface">Grand Hall</h4>
+        </div>
+        <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-4xl opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">play_circle</span>
+      </div>
+      <div class="group relative overflow-hidden cursor-pointer aspect-[2/3] mt-8" onclick="openModal(2)">
+        <img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=600&q=85" alt="The Vault" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-400 opacity-0 group-hover:opacity-100">
+          <p class="font-mono text-[8px] text-primary uppercase tracking-widest mb-1">1947</p>
+          <h4 class="font-headline text-base text-on-surface">The Vault</h4>
+        </div>
+        <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-4xl opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">play_circle</span>
+      </div>
+      <div class="group relative overflow-hidden cursor-pointer aspect-[2/3]" onclick="openModal(3)">
+        <img src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=85" alt="Velvet Curtain" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-400 opacity-0 group-hover:opacity-100">
+          <p class="font-mono text-[8px] text-primary uppercase tracking-widest mb-1">1952</p>
+          <h4 class="font-headline text-base text-on-surface">Velvet Curtain</h4>
+        </div>
+        <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-4xl opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">play_circle</span>
+      </div>
+      <div class="group relative overflow-hidden cursor-pointer aspect-[2/3] mt-8" onclick="openModal(4)">
+        <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600&q=85" alt="Reel Silence" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-400 opacity-0 group-hover:opacity-100">
+          <p class="font-mono text-[8px] text-primary uppercase tracking-widest mb-1">1950</p>
+          <h4 class="font-headline text-base text-on-surface">Reel Silence</h4>
+        </div>
+        <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-4xl opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">play_circle</span>
+      </div>
+    </div>
+    <div class="text-center mt-8 md:hidden fade-up">
+      <button onclick="openModal(0)" class="btn-ghost px-8 py-3">View All</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SIGN UP ─── -->
+<section id="signup" class="sec border-t border-white/5" style="background:rgba(10,10,10,0.72);backdrop-filter:blur(2px);">
+  <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-start gap-16">
+    <div class="flex-1 fade-up">
+      <p class="font-mono text-[9px] text-primary tracking-[0.5em] uppercase mb-4 opacity-75">Exclusive Access</p>
+      <h2 class="font-display text-6xl font-light leading-tight mb-4">
+        Join the<br/><em class="italic text-primary">Collection</em>
+      </h2>
+      <div class="gold-line mb-6"></div>
+      <p class="font-body text-on-surface-variant max-w-sm mb-8 opacity-75 leading-relaxed">
+        Gain exclusive access to high-fidelity renders, limited editions, private neural archives, and early-access screenings.
+      </p>
+      <div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary text-base">check_circle</span>
+          <span class="font-body text-sm text-on-surface-variant">Unlimited HD downloads</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary text-base">check_circle</span>
+          <span class="font-body text-sm text-on-surface-variant">Private gallery access</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary text-base">check_circle</span>
+          <span class="font-body text-sm text-on-surface-variant">Monthly curator notes</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex-1 glass p-10 max-w-md w-full fade-up" style="transition-delay:0.15s;">
+      <form id="signup-form" onsubmit="handleSignup(event)" class="space-y-6">
+        <div class="inp-wrap">
+          <label>Full Name</label>
+          <input type="text" placeholder="Alexander Blackwood" required/>
+        </div>
+        <div class="inp-wrap">
+          <label>Email Address</label>
+          <input type="email" placeholder="contact@nocturne.co" required/>
+        </div>
+        <div class="inp-wrap">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••" required minlength="8"/>
+        </div>
+        <div class="inp-wrap">
+          <label>Invitation Code <span class="text-outline normal-case" style="font-size:9px;">(optional)</span></label>
+          <input type="text" placeholder="NCT-XXXX"/>
+        </div>
+        <button type="submit" class="btn-gold w-full py-4 mt-2">Request Access</button>
+        <p class="font-mono text-[9px] text-outline text-center tracking-widest">ALREADY A MEMBER? <a href="#profile" class="text-primary hover:underline">SIGN IN</a></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROFILE ─── -->
+<section id="profile" class="sec border-t border-white/5" style="background:rgba(10,10,10,0.65);backdrop-filter:blur(2px);">
+  <div class="max-w-6xl mx-auto">
+    <!-- Profile header -->
+    <div class="flex flex-col md:flex-row items-start md:items-end gap-8 mb-12 fade-up">
+      <div class="relative flex-shrink-0">
+        <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=85" alt="Profile" class="w-36 h-36 object-cover grayscale border border-primary/25 p-1"/>
+        <div class="absolute -bottom-2 -right-2 bg-primary text-on-primary font-mono text-[8px] px-3 py-1 tracking-widest uppercase">Curator</div>
+      </div>
+      <div class="flex-1">
+        <h2 class="font-display text-5xl text-on-surface font-light">Julian Vance</h2>
+        <p class="font-mono text-[9px] text-primary tracking-[0.3em] uppercase mt-1">Member Since 2023 · 42 Acquisitions</p>
+      </div>
+      <button class="btn-ghost px-6 py-2.5 self-start md:self-end" onclick="alert('Edit profile coming soon')">Edit Profile</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-4 mb-10 fade-up" style="transition-delay:0.1s;">
+      <div class="glass p-6 border-t border-primary/30">
+        <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-2">Influence Score</p>
+        <p class="font-headline text-4xl text-primary">9.8</p>
+      </div>
+      <div class="glass p-6">
+        <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-2">Collection Value</p>
+        <p class="font-headline text-4xl text-on-surface">142 ETH</p>
+      </div>
+      <div class="glass p-6">
+        <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-2">Ranking</p>
+        <p class="font-headline text-4xl text-on-surface">TOP 1%</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="fade-up" style="transition-delay:0.2s;">
+      <div class="flex gap-6 border-b border-white/10 mb-8">
+        <button class="tab-btn active font-mono text-[10px] uppercase tracking-widest pb-3" onclick="switchTab('collection')">Collection</button>
+        <button class="tab-btn font-mono text-[10px] uppercase tracking-widest pb-3 text-outline" onclick="switchTab('watchlist')">Watchlist</button>
+        <button class="tab-btn font-mono text-[10px] uppercase tracking-widest pb-3 text-outline" onclick="switchTab('activity')">Activity</button>
+      </div>
+      <div id="tab-collection" class="tab-panel active">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="group relative overflow-hidden cursor-pointer aspect-[2/3]" onclick="openModal(1)">
+            <img src="https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=400&q=85" alt="" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110"/>
+            <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
+              <p class="font-mono text-[8px] text-primary">Acquired</p>
+              <p class="font-headline text-sm text-on-surface">Arc of Silence</p>
+            </div>
+          </div>
+          <div class="group relative overflow-hidden cursor-pointer aspect-[2/3] mt-6" onclick="openModal(2)">
+            <img src="https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=400&q=85" alt="" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110"/>
+            <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
+              <p class="font-mono text-[8px] text-primary">Acquired</p>
+              <p class="font-headline text-sm text-on-surface">Urban Noir</p>
+            </div>
+          </div>
+          <div class="group relative overflow-hidden cursor-pointer aspect-[2/3]" onclick="openModal(3)">
+            <img src="https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?w=400&q=85" alt="" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110"/>
+            <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
+              <p class="font-mono text-[8px] text-primary">Acquired</p>
+              <p class="font-headline text-sm text-on-surface">The Reel</p>
+            </div>
+          </div>
+          <div class="group relative overflow-hidden cursor-pointer aspect-[2/3] mt-6" onclick="openModal(4)">
+            <img src="https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400&q=85" alt="" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110"/>
+            <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
+              <p class="font-mono text-[8px] text-primary">Acquired</p>
+              <p class="font-headline text-sm text-on-surface">Final Frame</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="tab-watchlist" class="tab-panel">
+        <div class="space-y-3">
+          <div class="glass p-4 flex items-center gap-4 cursor-pointer hover:border-primary/30 transition-colors" onclick="openModal(5)">
+            <img src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=120&q=80" alt="" class="w-16 h-20 object-cover flex-shrink-0 grayscale"/>
+            <div class="flex-1">
+              <p class="font-headline text-base text-on-surface">Grand Hall Restoration</p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest">1946 · Opening Soon</p>
+            </div>
+            <span class="material-symbols-outlined text-outline hover:text-primary transition-colors" onclick="event.stopPropagation();this.textContent=this.textContent=='bookmark'?'bookmark_added':'bookmark'">bookmark</span>
+          </div>
+          <div class="glass p-4 flex items-center gap-4 cursor-pointer hover:border-primary/30 transition-colors" onclick="openModal(6)">
+            <img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=120&q=80" alt="" class="w-16 h-20 object-cover flex-shrink-0 grayscale"/>
+            <div class="flex-1">
+              <p class="font-headline text-base text-on-surface">Midnight Archive</p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest">1953 · Limited Edition</p>
+            </div>
+            <span class="material-symbols-outlined text-outline hover:text-primary transition-colors" onclick="event.stopPropagation();this.textContent=this.textContent=='bookmark'?'bookmark_added':'bookmark'">bookmark</span>
+          </div>
+        </div>
+      </div>
+      <div id="tab-activity" class="tab-panel">
+        <div class="space-y-4">
+          <div class="flex items-start gap-4 py-3 border-b border-white/5">
+            <span class="material-symbols-outlined text-primary text-base mt-0.5">download</span>
+            <div>
+              <p class="font-body text-sm text-on-surface">Acquired <span class="text-primary">Arc of Silence</span></p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest mt-0.5">3 Days Ago</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 py-3 border-b border-white/5">
+            <span class="material-symbols-outlined text-primary text-base mt-0.5">visibility</span>
+            <div>
+              <p class="font-body text-sm text-on-surface">Screened <span class="text-primary">Neon Night — Director's Cut</span></p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest mt-0.5">1 Week Ago</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 py-3 border-b border-white/5">
+            <span class="material-symbols-outlined text-primary text-base mt-0.5">star</span>
+            <div>
+              <p class="font-body text-sm text-on-surface">Ranked <span class="text-primary">Top 1%</span> Curator globally</p>
+              <p class="font-mono text-[9px] text-outline uppercase tracking-widest mt-0.5">2 Weeks Ago</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CONTACT ─── -->
+<section id="contact" class="sec border-t border-white/5" style="background:rgba(10,10,10,0.72);backdrop-filter:blur(2px);">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
+    <div class="lg:col-span-4 fade-up">
+      <p class="font-mono text-[9px] text-primary tracking-[0.5em] uppercase mb-4 opacity-75">Get in Touch</p>
+      <h2 class="font-display text-7xl font-light italic text-primary leading-none mb-6">Connect.</h2>
+      <div class="gold-line mb-6"></div>
+      <p class="font-body text-on-surface-variant opacity-75 mb-8 leading-relaxed">
+        Reach out for bespoke architectural visualizations and high-end cinematic productions.
+      </p>
+      <div class="space-y-4">
+        <div class="glass p-5">
+          <span class="material-symbols-outlined text-primary mb-2 block">location_on</span>
+          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Headquarters</p>
+          <p class="font-body text-sm text-on-surface">88 Obsidian Plaza, Suite 404<br/>Neo Tokyo, JP 150-0002</p>
+        </div>
+        <div class="glass p-5">
+          <span class="material-symbols-outlined text-primary mb-2 block">mail</span>
+          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Inquiries</p>
+          <a href="mailto:support@nocturne.co" class="font-body text-sm text-on-surface hover:text-primary transition-colors">support@nocturne.co</a>
+        </div>
+        <div class="glass p-5">
+          <span class="material-symbols-outlined text-primary mb-2 block">schedule</span>
+          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Hours</p>
+          <p class="font-body text-sm text-on-surface">Mon–Fri, 10:00–19:00 JST</p>
+        </div>
+      </div>
+    </div>
+    <div class="lg:col-span-8 glass p-10 fade-up" style="transition-delay:0.15s;">
+      <form id="contact-form" onsubmit="handleContact(event)" class="space-y-6">
+        <div class="grid grid-cols-2 gap-6">
+          <div class="inp-wrap">
+            <label>Name</label>
+            <input type="text" required/>
+          </div>
+          <div class="inp-wrap">
+            <label>Email</label>
+            <input type="email" required/>
+          </div>
+        </div>
+        <div class="inp-wrap">
+          <label>Subject</label>
+          <input type="text" required/>
+        </div>
+        <div class="inp-wrap">
+          <label>Your Vision</label>
+          <textarea rows="5" required></textarea>
+        </div>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <button type="submit" class="btn-gold px-10 py-4">Send Inquiry</button>
+          <p class="font-mono text-[9px] text-outline">Replies within 24 hours</p>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="border-t border-white/5 px-8 md:px-20 py-12" style="background:rgba(10,10,10,0.88);backdrop-filter:blur(4px);">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between items-start gap-8 mb-10">
+      <div>
+        <p class="font-display text-2xl text-primary font-bold tracking-tight mb-2">AIxcellent</p>
+        <p class="font-mono text-[9px] text-outline uppercase tracking-widest">AIxcellent · Cinematic Excellence · Est. 2024</p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div>
+          <p class="font-mono text-[9px] text-primary uppercase tracking-widest mb-3">Explore</p>
+          <div class="space-y-2">
+            <a href="#gallery" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Gallery</a>
+            <a href="#archive" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Archive</a>
+            <a href="#about"   class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">About</a>
+          </div>
+        </div>
+        <div>
+          <p class="font-mono text-[9px] text-primary uppercase tracking-widest mb-3">Account</p>
+          <div class="space-y-2">
+            <a href="#signup"  class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Sign Up</a>
+            <a href="#profile" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Profile</a>
+            <a href="#contact" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Contact</a>
+          </div>
+        </div>
+        <div>
+          <p class="font-mono text-[9px] text-primary uppercase tracking-widest mb-3">Legal</p>
+          <div class="space-y-2">
+            <a href="#" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Privacy</a>
+            <a href="#" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Terms</a>
+            <a href="#" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Cookies</a>
+          </div>
+        </div>
+        <div>
+          <p class="font-mono text-[9px] text-primary uppercase tracking-widest mb-3">Social</p>
+          <div class="space-y-2">
+            <a href="#" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Instagram</a>
+            <a href="#" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">LinkedIn</a>
+            <a href="#" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Twitter / X</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-white/5 pt-6 flex flex-col md:flex-row justify-between items-center gap-2">
+      <p class="font-mono text-[9px] text-outline uppercase tracking-widest">© 2026 AIxcellent. All rights reserved.</p>
+      <p class="font-mono text-[9px] text-outline uppercase tracking-widest">Crafted with obsidian & gold.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════ VIDEO MODAL ══════════ -->
+<div id="vid-modal" onclick="closeModal()">
+  <div class="max-w-4xl w-full p-6 mx-4" onclick="event.stopPropagation()">
+    <div class="aspect-video bg-black/80 flex items-center justify-center relative border border-white/10 overflow-hidden">
+      <button onclick="closeModal()" class="absolute top-4 right-4 z-10 material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors text-2xl">close</button>
+      <div class="text-center z-10">
+        <span class="material-symbols-outlined text-primary text-7xl mb-4 block" style="animation: pulse 2s ease-in-out infinite;">movie</span>
+        <h3 class="font-headline text-2xl text-on-surface mb-2" id="modal-title">Loading Cinematic Stream</h3>
+        <p class="font-mono text-[9px] text-outline uppercase tracking-widest">Decentralized Obsidian Layer</p>
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+    </div>
+    <div class="flex justify-between items-center mt-4 px-1">
+      <div id="modal-meta" class="font-mono text-[9px] text-outline uppercase tracking-widest"></div>
+      <div class="flex gap-3">
+        <button class="btn-ghost px-4 py-2 text-[9px]" onclick="closeModal()">Close</button>
+        <button class="btn-gold px-4 py-2 text-[9px]" onclick="alert('Added to collection!')">Add to Collection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[2000] glass border border-primary/30 px-6 py-3 font-mono text-[10px] text-primary uppercase tracking-widest transition-all duration-500 opacity-0 translate-y-4 pointer-events-none">
+  Message
+</div>
+
+<!-- ══════════ JAVASCRIPT ══════════ -->
+<script>
+(function() {
+
+  // ── Setup: move sticky container into wrapper ──
+  const wrapper = document.getElementById('gallery');
+  const stickyInner = document.getElementById('sticky-inner');
+  stickyInner.style.display = '';
+  wrapper.appendChild(stickyInner);
+
+  const track = document.getElementById('track');
+  const NUM_PANELS = 4;
+
+  function setWrapperHeight() {
+    wrapper.style.height = ((NUM_PANELS - 1) * window.innerWidth + window.innerHeight) + 'px';
+  }
+  setWrapperHeight();
+  window.addEventListener('resize', setWrapperHeight);
+
+  // ── Smooth LERP scroll ──
+  let rawY = 0, lerpY = 0;
+  window.addEventListener('scroll', () => { rawY = window.scrollY; }, { passive: true });
+
+  let activePanel = 0;
+  const dots = document.querySelectorAll('#prog-dots > div');
+
+  function tick() {
+    lerpY += (rawY - lerpY) * 0.07;
+    const wTop = wrapper.offsetTop;
+    const maxScroll = (NUM_PANELS - 1) * window.innerWidth;
+    const rel = Math.max(0, Math.min(lerpY - wTop, maxScroll));
+    track.style.transform = `translateX(-${rel}px)`;
+
+    // Spotlight parallax
+    document.querySelectorAll('.spotlight').forEach(s => {
+      const panelEl = s.closest('.panel');
+      if (panelEl) {
+        const left = panelEl.getBoundingClientRect().left;
+        s.style.transform = `translateX(${left * 0.1}px)`;
+      }
+    });
+
+    // Update dots
+    const maxWrap = wrapper.offsetHeight - window.innerHeight;
+    const pct = maxWrap > 0 ? Math.max(0, Math.min((lerpY - wrapper.offsetTop) / maxScroll, 1)) : 0;
+    const newPanel = Math.min(NUM_PANELS - 1, Math.round(pct * (NUM_PANELS - 1)));
+    if (newPanel !== activePanel) {
+      activePanel = newPanel;
+      dots.forEach((d, i) => {
+        if (i === activePanel) {
+          d.style.width = '40px'; d.style.background = 'var(--primary)';
+        } else {
+          d.style.width = '16px'; d.style.background = 'rgba(255,255,255,0.2)';
+        }
+      });
+    }
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ── Nav scroll state ──
+  const nav = document.getElementById('main-nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
+
+  // ── Movie frame entrance animation ──
+  const frameObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.movie-frame').forEach(f => frameObs.observe(f));
+
+  // ── Section fade-up ──
+  const secObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-up').forEach(el => secObs.observe(el));
+
+  // ── Spotlight mouse tracking ──
+  document.addEventListener('mousemove', e => {
+    document.querySelectorAll('.spotlight').forEach(s => {
+      const r = s.parentElement.getBoundingClientRect();
+      if (r.left < window.innerWidth && r.right > 0) {
+        const x = e.clientX - r.left - (s.offsetWidth / 2);
+        const y = e.clientY - r.top  - (s.offsetHeight / 2);
+        s.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+        s.style.transition = 'transform 0.3s cubic-bezier(0.1,0,0.1,1)';
+      }
+    });
+  });
+
+  // ── Scroll to panel ──
+  window.scrollToPanel = function(idx) {
+    const target = wrapper.offsetTop + idx * window.innerWidth;
+    window.scrollTo({ top: target, behavior: 'smooth' });
+  };
+
+  window.smoothToTop = function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ── Mobile nav ──
+  window.toggleMobileNav = function() {
+    document.getElementById('mobile-nav').classList.toggle('open');
+  };
+
+  // ── Modal ──
+  const films = [
+    { title: 'Grand Hall', meta: '1944 · Architectural Noir · Gallery A' },
+    { title: 'Shadows',    meta: '1947 · Classic Noir · 1h 37m' },
+    { title: 'The Alibi',  meta: '1952 · Neo-Realism · 2h 01m' },
+    { title: 'Nightfall',  meta: '1950 · Classic Era · 1h 45m' },
+    { title: 'Celluloid',  meta: 'Exhibition · Gallery B · Limited' },
+    { title: 'Deception',  meta: '1944 · Director\'s Cut · 1h 45m' },
+    { title: 'Double Crossing', meta: '1949 · Restored · 1h 32m' },
+    { title: 'Neon Night', meta: '1982 · Director\'s Cut · 4K HDR' },
+    { title: 'Midnight Alley', meta: '1947 · High Contrast · 1h 55m' },
+    { title: 'The Big Sleep', meta: '1946 · Restoration · 2h 01m' },
+  ];
+  window.openModal = function(idx) {
+    const f = films[idx] || films[0];
+    document.getElementById('modal-title').textContent = f.title;
+    document.getElementById('modal-meta').textContent = f.meta;
+    document.getElementById('vid-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeModal = function() {
+    document.getElementById('vid-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── Toast ──
+  window.showToast = function(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(16px)'; }, 2800);
+  };
+
+  // ── Forms ──
+  window.handleSignup = function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.textContent = 'Requesting…'; btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = 'Request Access'; btn.disabled = false;
+      e.target.reset();
+      showToast('Access requested — we\'ll be in touch.');
+    }, 1400);
+  };
+  window.handleContact = function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.textContent = 'Sending…'; btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = 'Send Inquiry'; btn.disabled = false;
+      e.target.reset();
+      showToast('Inquiry sent — expect a reply within 24h.');
+    }, 1400);
+  };
+
+  // ── Profile tabs ──
+  window.switchTab = function(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('onclick').includes(`'${name}'`));
+      if (!b.classList.contains('active')) b.classList.add('text-outline');
+      else b.classList.remove('text-outline');
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === `tab-${name}`);
+    });
+  };
+
+  // ── Nav smooth scroll override ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', function(e) {
+      const id = this.getAttribute('href');
+      if (id === '#gallery') { e.preventDefault(); smoothToTop(); return; }
+      const el = document.querySelector(id);
+      if (el) {
+        e.preventDefault();
+        const offset = el.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: offset, behavior: 'smooth' });
+      }
+    });
+  });
+
+})();
+</script>
+<style>
+@keyframes pulse {
+  0%,100% { opacity:0.4; } 50% { opacity:1; }
+}
+</style>
+</body>
+</html>
