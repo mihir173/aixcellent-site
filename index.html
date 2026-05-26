@@ -168,30 +168,46 @@
   }
   .movie-frame:hover .play-btn { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 
-  /* ── Buttons — minimal modern ── */
+  /* ── Buttons — modern ── */
   .btn-gold {
-    display: inline-block;
-    background: var(--primary);
+    display: inline-block; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #e8c84e 0%, #d4af37 55%, #b8952e 100%);
     color: #0a0a0a;
-    border: none;
+    border: none; border-radius: 8px;
     font-family: "JetBrains Mono", monospace; font-size: 10px;
-    letter-spacing: 0.14em; text-transform: uppercase;
+    letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600;
     cursor: pointer;
-    transition: background 0.22s ease, color 0.22s ease, opacity 0.22s ease;
+    box-shadow: 0 4px 18px rgba(212,175,55,0.35), 0 1px 4px rgba(0,0,0,0.5);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
   }
-  .btn-gold:hover { background: #c49b28; }
+  .btn-gold::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+    transform: translateX(-100%); transition: transform 0.5s ease;
+  }
+  .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(212,175,55,0.5), 0 2px 8px rgba(0,0,0,0.5); }
+  .btn-gold:hover::after { transform: translateX(100%); }
+  .btn-gold:active { transform: translateY(0); }
 
   .btn-ghost {
     display: inline-block;
-    background: transparent;
-    color: rgba(229,226,225,0.65);
-    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.05);
+    color: rgba(229,226,225,0.8);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
     font-family: "JetBrains Mono", monospace; font-size: 10px;
     letter-spacing: 0.14em; text-transform: uppercase;
     cursor: pointer;
-    transition: border-color 0.22s ease, color 0.22s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all 0.22s ease;
   }
-  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-ghost:hover {
+    background: rgba(212,175,55,0.1); border-color: rgba(212,175,55,0.55);
+    color: var(--primary); transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(0,0,0,0.3), 0 0 0 1px rgba(212,175,55,0.2);
+  }
+  .btn-ghost:active { transform: translateY(0); }
 
   /* ── Glass panel ── */
   .glass {
@@ -297,12 +313,15 @@
     <a href="#about"    class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">About</a>
     <a href="#archive"  class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Archive</a>
     <a href="#signup"   class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Join</a>
-    <a href="#profile"  class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Profile</a>
     <a href="#contact"  class="font-mono text-[10px] text-on-surface-variant hover:text-primary transition-all duration-300 hover:tracking-widest uppercase tracking-widest">Contact</a>
   </div>
 
   <div class="flex items-center gap-4">
-    <a href="#signup" class="btn-gold hidden md:inline-block px-6 py-2.5 text-[10px]">Sign Up</a>
+    <button id="nav-profile-btn" onclick="handleProfileClick()" class="hidden md:flex items-center gap-2 font-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest">
+      <span class="material-symbols-outlined text-base">account_circle</span>
+      <span id="nav-profile-label">Sign In</span>
+    </button>
+    <a href="#signup" id="nav-signup-btn" class="btn-gold hidden md:inline-block px-6 py-2.5 text-[10px]">Sign Up</a>
     <button id="hamburger" class="md:hidden material-symbols-outlined text-on-surface-variant" onclick="toggleMobileNav()">menu</button>
   </div>
 </nav>
@@ -314,7 +333,7 @@
   <a href="#about"   onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">About</a>
   <a href="#archive" onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Archive</a>
   <a href="#signup"  onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Join</a>
-  <a href="#profile" onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Profile</a>
+  <button onclick="toggleMobileNav();handleProfileClick()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Profile</button>
   <a href="#contact" onclick="toggleMobileNav()" class="font-mono text-sm text-on-surface-variant hover:text-primary uppercase tracking-[0.3em]">Contact</a>
   <a href="#signup"  onclick="toggleMobileNav()" class="btn-gold px-8 py-3 mt-4">Sign Up</a>
 </div>
@@ -680,15 +699,15 @@
           <input type="text" placeholder="NCT-XXXX"/>
         </div>
         <button type="submit" class="btn-gold w-full py-4 mt-2">Request Access</button>
-        <p class="font-mono text-[9px] text-outline text-center tracking-widest">ALREADY A MEMBER? <a href="#profile" class="text-primary hover:underline">SIGN IN</a></p>
+        <p class="font-mono text-[9px] text-outline text-center tracking-widest">ALREADY A MEMBER? <button onclick="handleProfileClick()" class="text-primary hover:underline">SIGN IN</button></p>
       </form>
     </div>
   </div>
 </section>
 
-<!-- ─── PROFILE ─── -->
-<section id="profile" class="sec border-t border-white/5" style="background:rgba(10,10,10,0.65);backdrop-filter:blur(2px);">
-  <div class="max-w-6xl mx-auto">
+<!-- ─── PROFILE PAGE OVERLAY ─── -->
+<div id="profile-page" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(8,8,8,0.97);backdrop-filter:blur(24px);overflow-y:auto;">
+  <div class="max-w-5xl mx-auto px-8 py-24">
     <!-- Profile header -->
     <div class="flex flex-col md:flex-row items-start md:items-end gap-8 mb-12 fade-up">
       <div class="relative flex-shrink-0">
@@ -803,8 +822,9 @@
         </div>
       </div>
     </div>
+    <button onclick="closeProfile()" class="fixed top-6 right-8 material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors text-2xl z-10">close</button>
   </div>
-</section>
+</div>
 
 <!-- ─── CONTACT ─── -->
 <section id="contact" class="sec border-t border-white/5" style="background:rgba(10,10,10,0.72);backdrop-filter:blur(2px);">
@@ -818,19 +838,9 @@
       </p>
       <div class="space-y-4">
         <div class="glass p-5">
-          <span class="material-symbols-outlined text-primary mb-2 block">location_on</span>
-          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Headquarters</p>
-          <p class="font-body text-sm text-on-surface">88 Obsidian Plaza, Suite 404<br/>Neo Tokyo, JP 150-0002</p>
-        </div>
-        <div class="glass p-5">
           <span class="material-symbols-outlined text-primary mb-2 block">mail</span>
-          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Inquiries</p>
-          <a href="mailto:support@nocturne.co" class="font-body text-sm text-on-surface hover:text-primary transition-colors">support@nocturne.co</a>
-        </div>
-        <div class="glass p-5">
-          <span class="material-symbols-outlined text-primary mb-2 block">schedule</span>
-          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Hours</p>
-          <p class="font-body text-sm text-on-surface">Mon–Fri, 10:00–19:00 JST</p>
+          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-1">Email</p>
+          <a href="mailto:aixcellent.in@gmail.com" class="font-body text-sm text-on-surface hover:text-primary transition-colors">aixcellent.in@gmail.com</a>
         </div>
       </div>
     </div>
@@ -884,7 +894,7 @@
           <p class="font-mono text-[9px] text-primary uppercase tracking-widest mb-3">Account</p>
           <div class="space-y-2">
             <a href="#signup"  class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Sign Up</a>
-            <a href="#profile" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Profile</a>
+            <button onclick="handleProfileClick()" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors text-left">Profile</button>
             <a href="#contact" class="block font-body text-xs text-on-surface-variant hover:text-primary transition-colors">Contact</a>
           </div>
         </div>
@@ -1081,16 +1091,108 @@
     setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(16px)'; }, 2800);
   };
 
+  // ── Auth state ──
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem('axc_user')); } catch { return null; }
+  }
+  function setUser(u) { localStorage.setItem('axc_user', JSON.stringify(u)); }
+  function clearUser() { localStorage.removeItem('axc_user'); }
+
+  function updateNavAuth() {
+    const user = getUser();
+    const label = document.getElementById('nav-profile-label');
+    const signupBtn = document.getElementById('nav-signup-btn');
+    if (user) {
+      if (label) label.textContent = user.name.split(' ')[0];
+      if (signupBtn) signupBtn.style.display = 'none';
+    } else {
+      if (label) label.textContent = 'Sign In';
+      if (signupBtn) signupBtn.style.display = '';
+    }
+  }
+
+  window.handleProfileClick = function() {
+    const user = getUser();
+    if (user) {
+      openProfile(user);
+    } else {
+      const offset = document.getElementById('signup').getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: offset, behavior: 'smooth' });
+    }
+  };
+
+  window.openProfile = function(user) {
+    const page = document.getElementById('profile-page');
+    const inner = page.querySelector('.max-w-5xl');
+    inner.innerHTML = `
+      <button onclick="closeProfile()" class="fixed top-6 right-8 material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors text-2xl z-10">close</button>
+      <div class="flex flex-col md:flex-row items-start md:items-end gap-8 mb-12">
+        <div class="relative flex-shrink-0">
+          <div class="w-36 h-36 rounded-full bg-surface-container-high border border-primary/25 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-5xl">account_circle</span>
+          </div>
+          <div class="absolute -bottom-2 -right-2 bg-primary text-on-primary font-mono text-[8px] px-3 py-1 tracking-widest uppercase rounded-sm">Member</div>
+        </div>
+        <div class="flex-1">
+          <h2 class="font-display text-5xl text-on-surface font-light">${user.name}</h2>
+          <p class="font-mono text-[9px] text-primary tracking-[0.3em] uppercase mt-1">${user.email}</p>
+          <p class="font-mono text-[9px] text-outline tracking-widest mt-1 uppercase">Member Since ${new Date().getFullYear()}</p>
+        </div>
+        <button onclick="handleLogout()" class="btn-ghost px-6 py-2.5 self-start md:self-end">Log Out</button>
+      </div>
+      <div class="grid grid-cols-3 gap-4 mb-10">
+        <div class="glass p-6 border-t border-primary/30">
+          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-2">Acquisitions</p>
+          <p class="font-headline text-4xl text-primary">0</p>
+        </div>
+        <div class="glass p-6">
+          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-2">Watchlist</p>
+          <p class="font-headline text-4xl text-on-surface">0</p>
+        </div>
+        <div class="glass p-6">
+          <p class="font-mono text-[9px] text-outline uppercase tracking-widest mb-2">Ranking</p>
+          <p class="font-headline text-4xl text-on-surface">—</p>
+        </div>
+      </div>
+      <div class="glass p-8 text-center">
+        <span class="material-symbols-outlined text-outline text-4xl mb-3 block">movie</span>
+        <p class="font-headline text-xl text-on-surface mb-2">Your collection is empty</p>
+        <p class="font-body text-sm text-on-surface-variant opacity-70 mb-6">Start exploring the gallery and add pieces to your collection.</p>
+        <button onclick="closeProfile()" class="btn-gold px-8 py-3">Browse Gallery</button>
+      </div>`;
+    page.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeProfile = function() {
+    document.getElementById('profile-page').style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  window.handleLogout = function() {
+    clearUser(); updateNavAuth(); closeProfile();
+    showToast('Logged out successfully.');
+  };
+
+  // Init nav auth state on load
+  updateNavAuth();
+
   // ── Forms ──
   window.handleSignup = function(e) {
     e.preventDefault();
-    const btn = e.target.querySelector('button[type=submit]');
+    const form = e.target;
+    const name = form.querySelector('input[type=text]').value;
+    const email = form.querySelector('input[type=email]').value;
+    const btn = form.querySelector('button[type=submit]');
     btn.textContent = 'Requesting…'; btn.disabled = true;
     setTimeout(() => {
       btn.textContent = 'Request Access'; btn.disabled = false;
-      e.target.reset();
-      showToast('Access requested — we\'ll be in touch.');
-    }, 1400);
+      setUser({ name, email });
+      updateNavAuth();
+      form.reset();
+      showToast(`Welcome, ${name.split(' ')[0]}! Access granted.`);
+      setTimeout(() => openProfile(getUser()), 800);
+    }, 1000);
   };
   window.handleContact = function(e) {
     e.preventDefault();
